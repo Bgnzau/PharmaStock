@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PharmaStock - Tableau de Bord</title>
+    <!-- Bootstrap 5 -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <!-- Google Fonts & FontAwesome pour les icônes SaaS -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Bibliothèque Graphique Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8f9fa;
+        }
+        /* Style de la Sidebar */
+        .sidebar {
+            position: fixed;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            width: 260px;
+            background-color: #1e293b; /* Bleu ardoise très pro */
+            z-index: 100;
+            padding-top: 24px;
+        }
+        .sidebar-brand {
+            color: #fff;
+            font-weight: 700;
+            font-size: 1.25rem;
+            padding: 0 24px;
+            margin-bottom: 32px;
+        }
+        .nav-link-custom {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: #94a3b8;
+            padding: 12px 24px;
+            font-weight: 500;
+            text-decoration: none;
+            transition: all 0.2s ease;
+        }
+        .nav-link-custom:hover, .nav-link-custom.active {
+            color: #fff;
+            background-color: rgba(255, 255, 255, 0.05);
+            border-left: 4px solid #10b981;
+        }
+        /* Contenu Principal */
+        .main-content {
+            margin-left: 260px;
+            padding: 40px;
+        }
+        .stat-card {
+            border: none;
+            border-radius: 12px;
+            transition: transform 0.2s;
+        }
+        .stat-card:hover {
+            transform: translateY(-2px);
+        }
+        .table-card {
+            border: none;
+            border-radius: 12px;
+            background-color: #fff;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+        }
+        /* Style personnalisé pour le conteneur du graphique */
+        .chart-card {
+            border: none;
+            border-radius: 12px;
+            background-color: #fff;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+        }
+        /* 📱 DESIGN RESPONSIVE POUR SMARTPHONES (Écrans < 768px) */
+        @media screen and (max-width: 768px) {
+            body {
+                padding-top: 60px; /* Évite que le contenu passe sous la sidebar transformée en bandeau */
+            }
+            /* 1. La sidebar devient un bandeau horizontal en haut */
+            .sidebar {
+                position: relative !important;
+                width: 100% !important;
+                height: auto !important;
+                padding: 12px 0 !important;
+            }
+            .sidebar-brand {
+                margin-bottom: 12px !important;
+                text-align: center;
+            }
+            /* Les liens s'alignent horizontalement ou en grille souple */
+            .sidebar nav {
+                flex-direction: row !important;
+                flex-wrap: wrap;
+                justify-content: center;
+                gap: 5px !important;
+                padding: 0 10px;
+            }
+            .nav-link-custom {
+                padding: 8px 12px !important;
+                font-size: 0.85rem;
+                border-left: none !important;
+                border-bottom: 2px solid transparent;
+            }
+            .nav-link-custom:hover, .nav-link-custom.active {
+                border-left: none !important;
+                border-bottom: 2px solid #10b981;
+            }
+            
+            /* 2. L'espace de travail prend toute la largeur */
+            .main-content {
+                margin-left: 0 !important;
+                padding: 20px !important;
+            }
+            
+            /* Ajustement du header profil */
+            .main-content > .d-flex {
+                flex-direction: column;
+                align-items: flex-start !important;
+                gap: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 1. SIDEBAR FIXE À GAUCHE -->
+    <div class="sidebar">
+        <div class="sidebar-brand">
+            <i class="fa-solid fa-hospital-user text-success me-2"></i>PharmaStock
+        </div>
+        <nav class="d-flex flex-column gap-1">
+            <a href="/" class="nav-link-custom active">
+                <i class="fa-solid fa-chart-pie"></i> Vue d'ensemble
+            </a>
+            <a href="/medicaments" class="nav-link-custom">
+                <i class="fa-solid fa-capsules"></i> Médicaments
+            </a>
+            <a href="/categories" class="nav-link-custom">
+                <i class="fa-solid fa-tags"></i> Catégories
+            </a>
+            <a href="/ventes" class="nav-link-custom">
+                <i class="fa-solid fa-cart-shopping"></i> Module Caisse
+            </a>
+        </nav>
+    </div>
+
+    <!-- 2. ESPACE DE TRAVAIL À DROITE -->
+    <div class="main-content">
+        
+        <!-- Header du Dashboard avec le Logout -->
+        <div class="d-flex justify-content-between align-items-center mb-5">
+            <div>
+                <h2 class="fw-bold text-dark m-0">Tableau de Bord</h2>
+                <p class="text-muted small m-0">Pilotez l'état global des stocks de votre pharmacie</p>
+            </div>
+            
+            <!-- Profil + Bouton Déconnexion épuré -->
+            <div class="d-flex align-items-center gap-3 bg-white p-2 pe-3 rounded-pill shadow-sm">
+                <div class="bg-success text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 36px; height: 36px;">
+                    <i class="fa-solid fa-user small"></i>
+                </div>
+                <div class="d-flex flex-column">
+                    <span class="fw-semibold text-dark small leading-none" th:text="${username}">Utilisateur</span>
+                    <span class="text-muted" style="font-size: 0.7rem;">Session active</span>
+                </div>
+                <form th:action="@{/logout}" method="POST" class="m-0 ms-2">
+                    <button type="submit" class="btn btn-sm btn-outline-danger border-0 rounded-circle" title="Déconnexion">
+                        <i class="fa-solid fa-power-off"></i>
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- ZONE DES ALERTES (CARTES SAAS) -->
+        <div class="row g-4 mb-5">
+            <!-- Produits Périmés -->
+            <div class="col-md-4">
+                <div class="card stat-card bg-white p-4 shadow-sm border-start border-danger border-4">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="text-muted small fw-medium">PRODUITS PÉRIMÉS</span>
+                        <div class="text-danger bg-danger-subtle rounded p-2"><i class="fa-solid fa-circle-xmark"></i></div>
+                    </div>
+                    <h2 class="fw-bold text-dark m-0" th:text="${nbPerimes}">0</h2>
+                    <span class="text-danger small mt-1 d-block fw-medium"><i class="fa-solid fa-triangle-exclamation me-1"></i> À retirer d'urgence</span>
+                </div>
+            </div>
+            
+            <!-- Proche expiration -->
+            <div class="col-md-4">
+                <div class="card stat-card bg-white p-4 shadow-sm border-start border-warning border-4">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="text-muted small fw-medium">PROCHE EXPIRATION (-3M)</span>
+                        <div class="text-warning bg-warning-subtle rounded p-2"><i class="fa-solid fa-hourglass-half"></i></div>
+                    </div>
+                    <h2 class="fw-bold text-dark m-0" th:text="${nbPresquePerimes}">0</h2>
+                    <span class="text-warning small mt-1 d-block fw-medium"><i class="fa-solid fa-bolt me-1"></i> À écouler rapidement</span>
+                </div>
+            </div>
+
+            <!-- Ruptures -->
+            <div class="col-md-4">
+                <div class="card stat-card bg-white p-4 shadow-sm border-start border-info border-4">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="text-muted small fw-medium">STOCK FAIBLE / RUPTURE</span>
+                        <div class="text-info bg-info-subtle rounded p-2"><i class="fa-solid fa-boxes-stacked"></i></div>
+                    </div>
+                    <h2 class="fw-bold text-dark m-0" th:text="${nbRupture}">0</h2>
+                    <span class="text-info small mt-1 d-block fw-medium"><i class="fa-solid fa-arrow-trend-down me-1"></i> Quantité &le; 5 unités</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- GRAPHIC VISUALIZATION (Chart.js) -->
+        <div class="row mb-5">
+            <div class="col-12">
+                <div class="card chart-card p-4">
+                    <h6 class="fw-bold text-dark mb-4">
+                        <i class="fa-solid fa-chart-bar text-success me-2"></i>Niveaux des Stocks Critiques (Alertes &le; 5 unités)
+                    </h6>
+                    <div style="position: relative; height: 320px; width: 100%;">
+                        <canvas id="graphiqueStocks"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- LISTES CRITIQUES -->
+        <div class="row g-4">
+            <!-- Table Produits Périmés -->
+            <div class="col-md-6" th:if="${not #lists.isEmpty(listePerimes)}">
+                <div class="card table-card p-4">
+                    <h6 class="fw-bold text-danger mb-3"><i class="fa-solid fa-ban me-2"></i>Lots expirés détectés</h6>
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle m-0">
+                            <thead>
+                                <tr class="text-muted small">
+                                    <th>Médicament</th>
+                                    <th class="text-end">Date d'expiration</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:each="med : ${listePerimes}">
+                                    <td class="fw-semibold text-dark" th:text="${med.nom}">Nom</td>
+                                    <td class="text-end text-danger fw-medium" th:text="${med.datePeremption}">Date</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Table Proches de l'expiration -->
+            <div class="col-md-6" th:if="${not #lists.isEmpty(listePresquePerimes)}">
+                <div class="card table-card p-4">
+                    <h6 class="fw-bold text-warning mb-3"><i class="fa-solid fa-clock me-2"></i>Alertes de péremption imminente</h6>
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle m-0">
+                            <thead>
+                                <tr class="text-muted small">
+                                    <th>Médicament</th>
+                                    <th class="text-end">Expire le</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:each="med : ${listePresquePerimes}">
+                                    <td class="fw-semibold text-dark" th:text="${med.nom}">Nom</td>
+                                    <td class="text-end text-warning fw-medium" th:text="${med.datePeremption}">Date</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- SCRIPT CHART.JS : Chargement des données asynchrones depuis l'API -->
+    <script>
+        fetch('/api/stocks-donnees')
+            .then(response => response.json())
+            .then(donnees => {
+                const noms = donnees.map(med => med.nom);
+                const quantites = donnees.map(med => med.quantiteStock);
+
+                const ctx = document.getElementById('graphiqueStocks').getContext('2d');
+                new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: noms,
+                        datasets: [{
+                            label: 'Quantité restante en stock',
+                            data: quantites,
+                            backgroundColor: 'rgba(16, 185, 129, 0.2)', // Vert transparent assorti à PharmaStock
+                            borderColor: '#10b981', // Beau vert émeraude
+                            borderWidth: 2,
+                            borderRadius: 6, // Arrondir les angles des barres pour le look SaaS
+                            borderSkipped: false
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: true,
+                                position: 'top',
+                                labels: {
+                                    boxWidth: 12,
+                                    font: { family: "'Inter', sans-serif", size: 12 }
+                                }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: { 
+                                    stepSize: 1,
+                                    font: { family: "'Inter', sans-serif" }
+                                },
+                                grid: { color: '#f1f5f9' }
+                            },
+                            x: {
+                                ticks: { font: { family: "'Inter', sans-serif", fw: 500 } },
+                                grid: { display: false }
+                            }
+                        }
+                    }
+                });
+            })
+            .catch(error => console.error('Erreur lors de l\'initialisation du graphique:', error));
+    </script>
+</body>
+</html>

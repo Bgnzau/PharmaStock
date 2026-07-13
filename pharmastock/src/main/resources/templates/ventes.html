@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PharmaStock - Module de Caisse</title>
+    <!-- Bootstrap 5 -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <!-- Fonts & FontAwesome -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f8f9fa; }
+        /* La fameuse Sidebar Bleu Ardoise */
+        .sidebar { position: fixed; top: 0; bottom: 0; left: 0; width: 260px; background-color: #1e293b; z-index: 100; padding-top: 24px; }
+        .sidebar-brand { color: #fff; font-weight: 700; font-size: 1.25rem; padding: 0 24px; margin-bottom: 32px; }
+        .nav-link-custom { display: flex; align-items: center; gap: 12px; color: #94a3b8; padding: 12px 24px; font-weight: 500; text-decoration: none; transition: all 0.2s ease; }
+        .nav-link-custom:hover, .nav-link-custom.active { color: #fff; background-color: rgba(255, 255, 255, 0.05); border-left: 4px solid #3b82f6; }
+        
+        /* Contenu à droite */
+        .main-content { margin-left: 260px; padding: 40px; }
+        .saas-card { border: none; border-radius: 12px; background-color: #fff; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+        .btn-invoice { background-color: #1e293b; color: #fff; font-weight: 600; }
+        .btn-invoice:hover { background-color: #0f172a; color: #fff; }
+
+        /* 📱 DESIGN RESPONSIVE POUR SMARTPHONES (Écrans < 768px) */
+        @media screen and (max-width: 768px) {
+            body {
+                padding-top: 60px;
+            }
+            /* La sidebar devient un bandeau horizontal en haut */
+            .sidebar {
+                position: relative !important;
+                width: 100% !important;
+                height: auto !important;
+                padding: 12px 0 !important;
+            }
+            .sidebar-brand {
+                margin-bottom: 12px !important;
+                text-align: center;
+            }
+            .sidebar nav {
+                flex-direction: row !important;
+                flex-wrap: wrap;
+                justify-content: center;
+                gap: 5px !important;
+                padding: 0 10px;
+            }
+            .nav-link-custom {
+                padding: 8px 12px !important;
+                font-size: 0.85rem;
+                border-left: none !important;
+                border-bottom: 2px solid transparent;
+            }
+            .nav-link-custom:hover, .nav-link-custom.active {
+                border-left: none !important;
+                border-bottom: 2px solid #10b981;
+            }
+            
+            /* L'espace de travail prend toute la largeur */
+            .main-content {
+                margin-left: 0 !important;
+                padding: 20px !important;
+            }
+            
+            /* Ajustement automatique des boutons et des headers alignés avec d-flex */
+            .main-content > .d-flex {
+                flex-direction: column;
+                align-items: stretch !important;
+                gap: 15px;
+            }
+            .main-content button, .main-content .btn {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 1. SIDEBAR FIXE À GAUCHE -->
+    <div class="sidebar">
+        <div class="sidebar-brand">
+            <i class="fa-solid fa-hospital-user text-primary me-2"></i>PharmaStock
+        </div>
+        <nav class="d-flex flex-column gap-1">
+            <a href="/" class="nav-link-custom">
+                <i class="fa-solid fa-chart-pie"></i> Vue d'ensemble
+            </a>
+            <a href="/medicaments" class="nav-link-custom">
+                <i class="fa-solid fa-capsules"></i> Médicaments
+            </a>
+            <a href="/categories" class="nav-link-custom">
+                <i class="fa-solid fa-tags"></i> Catégories
+            </a>
+            <a href="/ventes" class="nav-link-custom active">
+                <i class="fa-solid fa-cart-shopping"></i> Module Caisse
+            </a>
+        </nav>
+    </div>
+
+    <!-- 2. ESPACE DE TRAVAIL À DROITE -->
+    <div class="main-content">
+        
+        <!-- Header -->
+        <div class="mb-4">
+            <h2 class="fw-bold text-dark m-0">Module de Caisse</h2>
+            <p class="text-muted small m-0">Enregistrez les transactions et éditez les reçus en direct</p>
+        </div>
+
+        <!-- Messages Flash d'Alerte (Succès / Erreur de stock) -->
+        <div th:if="${success}" class="alert alert-success border-0 shadow-sm d-flex align-items-center gap-2" role="alert" style="border-radius: 10px;">
+            <i class="fa-solid fa-circle-check"></i> <span th:text="${success}"></span>
+        </div>
+        <div th:if="${error}" class="alert alert-danger border-0 shadow-sm d-flex align-items-center gap-2" role="alert" style="border-radius: 10px;">
+            <i class="fa-solid fa-circle-exclamation"></i> <span th:text="${error}"></span>
+        </div>
+
+        <div class="row g-4">
+            <!-- COLONNE GAUCHE : FORMULAIRE DE VENTE -->
+            <div class="col-lg-4">
+                <div class="card saas-card p-4 border-top border-primary border-4">
+                    <h5 class="fw-bold text-dark mb-4"><i class="fa-solid fa-cash-register text-muted me-2"></i>Nouvelle Vente</h5>
+                    
+                    <form th:action="@{/ventes/enregistrer}" method="POST">
+                        <div class="mb-3">
+                            <label for="medicament" class="form-label small fw-medium text-secondary">Sélectionner le médicament</label>
+                            <select name="medicamentId" id="medicament" class="form-select form-select-lg" style="font-size: 0.95rem; border-radius: 8px;" required>
+                                <option value="" disabled selected>-- Choisir le produit --</option>
+                                <option th:each="med : ${medicaments}" 
+                                        th:value="${med.id}" 
+                                        th:text="${med.nom} + ' (Stock: ' + ${med.quantiteStock} + ')'">
+                                </option>
+                            </select>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label for="quantite" class="form-label small fw-medium text-secondary">Quantité à vendre</label>
+                            <input type="number" name="quantite" id="quantite" class="form-control form-control-lg" style="font-size: 0.95rem; border-radius: 8px;" min="1" required placeholder="Ex: 2">
+                        </div>
+                        
+                        <button type="submit" class="btn btn-invoice btn-lg w-100 shadow-sm py-2" style="border-radius: 8px; font-size: 1rem;">
+                            <i class="fa-solid fa-check-double me-2"></i>Valider la transaction
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- COLONNE DROITE : HISTORIQUE DES TRANSACTIONS -->
+            <div class="col-lg-8">
+                <div class="card saas-card p-4">
+                    <h5 class="fw-bold text-dark mb-4"><i class="fa-solid fa-history text-muted me-2"></i>Historique du jour</h5>
+                    
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle m-0">
+                            <thead class="table-light">
+                                <tr class="text-muted small">
+                                    <th>Date & Heure</th>
+                                    <th>Médicament</th>
+                                    <th>Quantité</th>
+                                    <th class="text-end">Prix Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:each="v : ${ventes}">
+                                    <td class="text-muted small" th:text="${#temporals.format(v.dateVente, 'dd-MM-yyyy HH:mm')}">Date</td>
+                                    <td>
+                                        <div class="fw-bold text-dark" th:text="${v.medicament.nom}">Nom</div>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-light text-dark border fw-semibold" th:text="${v.quantite} + ' u'">0</span>
+                                    </td>
+                                    <td class="text-end fw-bold text-primary" th:text="${v.prixTotal} + ' FCFA'">0 FCFA</td>
+                                </tr>
+                                <tr th:if="${#lists.isEmpty(ventes)}">
+                                    <td colspan="4" class="text-center text-muted py-4">Aucune vente enregistrée aujourd'hui.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+</body>
+</html>

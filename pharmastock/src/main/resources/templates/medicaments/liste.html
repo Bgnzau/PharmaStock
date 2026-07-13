@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security" lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PharmaStock - Médicaments</title>
+    <!-- Bootstrap 5 -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <!-- Fonts & FontAwesome -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f8f9fa; }
+        .sidebar { position: fixed; top: 0; bottom: 0; left: 0; width: 260px; background-color: #1e293b; z-index: 100; padding-top: 24px; }
+        .sidebar-brand { color: #fff; font-weight: 700; font-size: 1.25rem; padding: 0 24px; margin-bottom: 32px; }
+        .nav-link-custom { display: flex; align-items: center; gap: 12px; color: #94a3b8; padding: 12px 24px; font-weight: 500; text-decoration: none; transition: all 0.2s ease; }
+        .nav-link-custom:hover, .nav-link-custom.active { color: #fff; background-color: rgba(255, 255, 255, 0.05); border-left: 4px solid #10b981; }
+        .main-content { margin-left: 260px; padding: 40px; }
+        .table-card { border: none; border-radius: 12px; background-color: #fff; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+
+        /* 📱 DESIGN RESPONSIVE POUR SMARTPHONES (Écrans < 768px) */
+        @media screen and (max-width: 768px) {
+            body {
+                padding-top: 60px;
+            }
+            /* La sidebar devient un bandeau horizontal en haut */
+            .sidebar {
+                position: relative !important;
+                width: 100% !important;
+                height: auto !important;
+                padding: 12px 0 !important;
+            }
+            .sidebar-brand {
+                margin-bottom: 12px !important;
+                text-align: center;
+            }
+            .sidebar nav {
+                flex-direction: row !important;
+                flex-wrap: wrap;
+                justify-content: center;
+                gap: 5px !important;
+                padding: 0 10px;
+            }
+            .nav-link-custom {
+                padding: 8px 12px !important;
+                font-size: 0.85rem;
+                border-left: none !important;
+                border-bottom: 2px solid transparent;
+            }
+            .nav-link-custom:hover, .nav-link-custom.active {
+                border-left: none !important;
+                border-bottom: 2px solid #10b981;
+            }
+            
+            /* L'espace de travail prend toute la largeur */
+            .main-content {
+                margin-left: 0 !important;
+                padding: 20px !important;
+            }
+            
+            /* Ajustement du Header (Titre + Bouton Nouveau Produit) */
+            .main-content > .d-flex {
+                flex-direction: column;
+                align-items: stretch !important;
+                gap: 15px;
+            }
+            .main-content button.btn-success {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 1. SIDEBAR FIXE À GAUCHE -->
+    <div class="sidebar">
+        <div class="sidebar-brand">
+            <i class="fa-solid fa-hospital-user text-success me-2"></i>PharmaStock
+        </div>
+        <nav class="d-flex flex-column gap-1">
+            <a href="/" class="nav-link-custom">
+                <i class="fa-solid fa-chart-pie"></i> Vue d'ensemble
+            </a>
+            <a href="/medicaments" class="nav-link-custom active">
+                <i class="fa-solid fa-capsules"></i> Médicaments
+            </a>
+            <a href="/categories" class="nav-link-custom">
+                <i class="fa-solid fa-tags"></i> Catégories
+            </a>
+            <a href="/ventes" class="nav-link-custom">
+                <i class="fa-solid fa-cart-shopping"></i> Module Caisse
+            </a>
+        </nav>
+    </div>
+
+    <!-- 2. ESPACE DE TRAVAIL À DROITE -->
+    <div class="main-content">
+        
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h2 class="fw-bold text-dark m-0">Gestion des Médicaments</h2>
+                <p class="text-muted small m-0">Consultez, ajoutez et mettez à jour votre catalogue</p>
+            </div>
+            <!-- Bouton d'ajout qui déclenche la Modal -->
+            <button class="btn btn-success fw-semibold shadow-sm px-4" data-bs-toggle="modal" data-bs-target="#addMedicamentModal">
+                <i class="fa-solid fa-plus me-2"></i>Nouveau Produit
+            </button>
+        </div>
+
+        <!-- Table des médicaments -->
+        <div class="card table-card p-4">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle m-0">
+                    <thead class="table-light">
+                        <tr class="text-muted small">
+                            <th>Nom du produit</th>
+                            <th>Catégorie</th>
+                            <th>Prix Unitaire</th>
+                            <th>Stock restant</th>
+                            <th>Date d'expiration</th>
+                            <th class="text-end" sec:authorize="hasRole('ADMIN')">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="med : ${medicaments}">
+                            <td>
+                                <div class="fw-bold text-dark" th:text="${med.nom}">Nom</div>
+                            </td>
+                            <td>
+                                <span class="badge bg-secondary-subtle text-secondary fw-medium" th:text="${med.categorie != null ? med.categorie.nom : 'Aucune'}">Catégorie</span>
+                            </td>
+                            <td class="fw-semibold text-dark" th:text="${med.prixUnitaire} + ' FCFA'">0 FCFA</td>
+                            <td>
+                                <span th:class="${med.quantiteStock <= 5} ? 'badge bg-danger-subtle text-danger fw-bold' : 'badge bg-success-subtle text-success fw-bold'"
+                                      th:text="${med.quantiteStock} + ' unités'">
+                                    0
+                                </span>
+                            </td>
+                            <td th:text="${med.datePeremption}" th:class="${med.isPerime()} ? 'text-danger fw-medium' : 'text-muted'">Date</td>
+                            
+                            <!-- Actions réservées uniquement à l'ADMIN -->
+                            <td class="text-end" sec:authorize="hasRole('ADMIN')">
+                                <a th:href="@{/medicaments/modifier/{id}(id=${med.id})}" class="btn btn-sm btn-outline-primary border-0 me-1" title="Modifier">
+                                    <i class="fa-solid fa-pen-to-square"></i>
+                                </a>
+                                <a th:href="@{/medicaments/supprimer/{id}(id=${med.id})}" class="btn btn-sm btn-outline-danger border-0" 
+                                   onclick="return confirm('Êtes-vous sûr de vouloir supprimer ce médicament ?');" title="Supprimer">
+                                    <i class="fa-solid fa-trash"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        <tr th:if="${#lists.isEmpty(medicaments)}">
+                            <td colspan="6" class="text-center text-muted py-4">Aucun médicament en stock. Cliquez sur "Nouveau Produit" pour démarrer.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- MODAL POUR AJOUT DIRECT -->
+    <div class="modal fade" id="addMedicamentModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg" style="border-radius: 12px;">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="fw-bold text-dark">Ajouter un médicament</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form th:action="@{/medicaments/ajouter}" method="POST">
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label small fw-medium text-secondary">Nom du médicament</label>
+                            <input type="text" name="nom" class="form-control" required placeholder="ex: Paracétamol 500mg">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-medium text-secondary">Catégorie</label>
+                            <select name="categorie.id" class="form-select" required>
+                                <option value="" disabled selected>-- Choisir la catégorie --</option>
+                                <option th:each="cat : ${categories}" th:value="${cat.id}" th:text="${cat.nom}"></option>
+                            </select>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label small fw-medium text-secondary">Prix Unitaire (FCFA)</label>
+                                <input type="number" name="prixUnitaire" class="form-control" min="0" required placeholder="ex: 1500">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label small fw-medium text-secondary">Quantité Initiale</label>
+                                <input type="number" name="quantiteStock" class="form-control" min="0" required placeholder="ex: 100">
+                            </div>
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label small fw-medium text-secondary">Date de péremption</label>
+                            <input type="date" name="datePeremption" class="form-control" required>
+                        </div>
+                    </div>
+                    <div class="modal-footer border-0 pt-0">
+                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Annuler</button>
+                        <button type="submit" class="btn btn-success px-4">Enregistrer</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
