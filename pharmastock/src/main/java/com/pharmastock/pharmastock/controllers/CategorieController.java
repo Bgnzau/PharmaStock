@@ -24,33 +24,34 @@ public class CategorieController {
         return "categories/liste"; // Va chercher templates/categories/liste.html
     }
 
-    // Traiter le formulaire d'ajout d'une catégorie
+    // Traiter le formulaire d'ajout ou de modification d'une catégorie
     @PostMapping("/ajouter")
     public String ajouterCategorie(@ModelAttribute("nouvelleCategorie") Categorie categorie) {
         service.saveCategorie(categorie);
-        return "redirect:/categories"; // Redirige vers la liste après l'ajout
+        return "redirect:/categories"; // Redirige vers la liste après l'ajout/modification
     }
 
-    // Supprimer une catégorie
+    // Supprimer une catégorie (Réservé à l'ADMIN via SecurityConfig)
     @GetMapping("/supprimer/{id}")
     public String supprimerCategorie(@PathVariable Long id) {
         service.deleteCategorie(id);
         return "redirect:/categories";
     }
 
-    // Charger la catégorie dans le formulaire pour modification
+    // Charger la catégorie dans le formulaire pour modification (Réservé à l'ADMIN
+    // via SecurityConfig)
     @GetMapping("/modifier/{id}")
     public String modifierCategorieForm(@PathVariable Long id, Model model) {
         Categorie catAModifier = service.getCategorieById(id);
-        
+
         // Si la catégorie n'existe pas, on retourne à la liste
         if (catAModifier == null) {
             return "redirect:/categories";
         }
-        
+
         model.addAttribute("categories", service.getAllCategories());
-        // Au lieu d'un objet vide, on passe l'objet existant au formulaire !
-        model.addAttribute("nouvelleCategorie", catAModifier); 
+        // Au lieu d'un objet vide, on injecte l'objet existant dans le formulaire !
+        model.addAttribute("nouvelleCategorie", catAModifier);
         return "categories/liste";
     }
 }

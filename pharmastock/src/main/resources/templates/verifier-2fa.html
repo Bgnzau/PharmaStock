@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>PharmaStock - Double Facteur</title>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f4f6f9; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .container { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); text-align: center; width: 350px; }
+        h2 { color: #333; margin-bottom: 10px; }
+        p { color: #666; font-size: 14px; }
+        .alert-success { color: green; font-weight: bold; margin-bottom: 15px; }
+        .alert-danger { color: red; font-weight: bold; margin-bottom: 15px; }
+        input[type="text"] { width: 100%; padding: 12px; margin: 15px 0; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-size: 18px; text-align: center; letter-spacing: 5px; }
+        button { background-color: #007bff; color: white; border: none; padding: 12px; width: 100%; border-radius: 4px; font-size: 16px; cursor: pointer; font-weight: bold; }
+        button:hover { background-color: #0056b3; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Double Facteur (2FA)</h2>
+    <p>Sécurisation de votre accès PharmaStock</p>
+
+    <!-- Affichage des messages de statut -->
+    <div class="alert-success" th:if="${message}" th:text="${message}"></div>
+    <div class="alert-danger" th:if="${error}" th:text="${error}"></div>
+
+    <form th:action="@{/verifier-2fa}" method="post">
+        <label for="code">Entrez le code à 6 chiffres reçu :</label>
+        <input type="text" id="code" name="code" placeholder="000000" maxlength="6" required autocomplete="off">
+        <button type="submit">Valider la connexion</button>
+    </form>
+</div>
+
+</body>
+</html>

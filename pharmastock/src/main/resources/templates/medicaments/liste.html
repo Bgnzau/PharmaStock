@@ -19,55 +19,17 @@
         .main-content { margin-left: 260px; padding: 40px; }
         .table-card { border: none; border-radius: 12px; background-color: #fff; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
 
-        /* 📱 DESIGN RESPONSIVE POUR SMARTPHONES (Écrans < 768px) */
+        /* 📱 DESIGN RESPONSIVE POUR SMARTPHONES */
         @media screen and (max-width: 768px) {
-            body {
-                padding-top: 60px;
-            }
-            /* La sidebar devient un bandeau horizontal en haut */
-            .sidebar {
-                position: relative !important;
-                width: 100% !important;
-                height: auto !important;
-                padding: 12px 0 !important;
-            }
-            .sidebar-brand {
-                margin-bottom: 12px !important;
-                text-align: center;
-            }
-            .sidebar nav {
-                flex-direction: row !important;
-                flex-wrap: wrap;
-                justify-content: center;
-                gap: 5px !important;
-                padding: 0 10px;
-            }
-            .nav-link-custom {
-                padding: 8px 12px !important;
-                font-size: 0.85rem;
-                border-left: none !important;
-                border-bottom: 2px solid transparent;
-            }
-            .nav-link-custom:hover, .nav-link-custom.active {
-                border-left: none !important;
-                border-bottom: 2px solid #10b981;
-            }
-            
-            /* L'espace de travail prend toute la largeur */
-            .main-content {
-                margin-left: 0 !important;
-                padding: 20px !important;
-            }
-            
-            /* Ajustement du Header (Titre + Bouton Nouveau Produit) */
-            .main-content > .d-flex {
-                flex-direction: column;
-                align-items: stretch !important;
-                gap: 15px;
-            }
-            .main-content button.btn-success {
-                width: 100%;
-            }
+            body { padding-top: 60px; }
+            .sidebar { position: relative !important; width: 100% !important; height: auto !important; padding: 12px 0 !important; }
+            .sidebar-brand { margin-bottom: 12px !important; text-align: center; }
+            .sidebar nav { flex-direction: row !important; flex-wrap: wrap; justify-content: center; gap: 5px !important; padding: 0 10px; }
+            .nav-link-custom { padding: 8px 12px !important; font-size: 0.85rem; border-left: none !important; border-bottom: 2px solid transparent; }
+            .nav-link-custom:hover, .nav-link-custom.active { border-left: none !important; border-bottom: 2px solid #10b981; }
+            .main-content { margin-left: 0 !important; padding: 20px !important; }
+            .main-content > .d-flex { flex-direction: column; align-items: stretch !important; gap: 15px; }
+            .main-content button.btn-success { width: 100%; }
         }
     </style>
 </head>
@@ -97,14 +59,20 @@
     <!-- 2. ESPACE DE TRAVAIL À DROITE -->
     <div class="main-content">
         
+        <!-- Alerte de restriction d'accès (s'affiche si interdit=true) -->
+        <div th:if="${param.interdit}" class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
+            <i class="fa-solid fa-triangle-exclamation me-2"></i> <strong>Accès Refusé !</strong> Votre rôle ne vous permet pas de modifier ou supprimer des médicaments.
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        
         <!-- Header -->
         <div class="d-flex justify-content-between align-items-center mb-4">
             <div>
                 <h2 class="fw-bold text-dark m-0">Gestion des Médicaments</h2>
                 <p class="text-muted small m-0">Consultez, ajoutez et mettez à jour votre catalogue</p>
             </div>
-            <!-- Bouton d'ajout qui déclenche la Modal -->
-            <button class="btn btn-success fw-semibold shadow-sm px-4" data-bs-toggle="modal" data-bs-target="#addMedicamentModal">
+            <!-- Bouton d'ajout : Masqué pour le vendeur, visible pour l'ADMIN -->
+            <button sec:authorize="hasRole('ROLE_ADMIN')" class="btn btn-success fw-semibold shadow-sm px-4" data-bs-toggle="modal" data-bs-target="#addMedicamentModal">
                 <i class="fa-solid fa-plus me-2"></i>Nouveau Produit
             </button>
         </div>
@@ -120,7 +88,7 @@
                             <th>Prix Unitaire</th>
                             <th>Stock restant</th>
                             <th>Date d'expiration</th>
-                            <th class="text-end" sec:authorize="hasRole('ADMIN')">Actions</th>
+                            <th class="text-end" sec:authorize="hasRole('ROLE_ADMIN')">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -129,7 +97,7 @@
                                 <div class="fw-bold text-dark" th:text="${med.nom}">Nom</div>
                             </td>
                             <td>
-                                <span class="badge bg-secondary-subtle text-secondary fw-medium" th:text="${med.categorie != null ? med.categorie.nom : 'Aucune'}">Catégorie</span>
+                                <div class="badge bg-secondary-subtle text-secondary fw-medium" th:text="${med.categorie != null ? med.categorie.nom : 'Aucune'}">Catégorie</div>
                             </td>
                             <td class="fw-semibold text-dark" th:text="${med.prixUnitaire} + ' FCFA'">0 FCFA</td>
                             <td>
@@ -141,7 +109,7 @@
                             <td th:text="${med.datePeremption}" th:class="${med.isPerime()} ? 'text-danger fw-medium' : 'text-muted'">Date</td>
                             
                             <!-- Actions réservées uniquement à l'ADMIN -->
-                            <td class="text-end" sec:authorize="hasRole('ADMIN')">
+                            <td class="text-end" sec:authorize="hasRole('ROLE_ADMIN')">
                                 <a th:href="@{/medicaments/modifier/{id}(id=${med.id})}" class="btn btn-sm btn-outline-primary border-0 me-1" title="Modifier">
                                     <i class="fa-solid fa-pen-to-square"></i>
                                 </a>
@@ -152,7 +120,7 @@
                             </td>
                         </tr>
                         <tr th:if="${#lists.isEmpty(medicaments)}">
-                            <td colspan="6" class="text-center text-muted py-4">Aucun médicament en stock. Cliquez sur "Nouveau Produit" pour démarrer.</td>
+                            <td colspan="6" class="text-center text-muted py-4">Aucun médicament en stock. <span sec:authorize="hasRole('ROLE_ADMIN')">Cliquez sur "Nouveau Produit" pour démarrer.</span></td>
                         </tr>
                     </tbody>
                 </table>
@@ -161,23 +129,28 @@
 
     </div>
 
-    <!-- MODAL POUR AJOUT DIRECT -->
-    <div class="modal fade" id="addMedicamentModal" tabindex="-1" aria-hidden="true">
+    <!-- MODAL UNIQUE POUR AJOUT ET MODIFICATION (Masqué pour le vendeur, sécurisé au cas où) -->
+    <div sec:authorize="hasRole('ROLE_ADMIN')" class="modal fade" id="addMedicamentModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content border-0 shadow-lg" style="border-radius: 12px;">
                 <div class="modal-header border-0 pb-0">
-                    <h5 class="fw-bold text-dark">Ajouter un médicament</h5>
+                    <h5 class="fw-bold text-dark" th:text="${nouveauMedicament.id != null} ? 'Modifier le médicament' : 'Ajouter un médicament'">Ajouter un médicament</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <form th:action="@{/medicaments/ajouter}" method="POST">
+                
+                <form th:action="@{/medicaments/ajouter}" th:object="${nouveauMedicament}" method="POST">
+                    
+                    <!-- ID caché indispensable pour la mise à jour -->
+                    <input type="hidden" th:field="*{id}" />
+
                     <div class="modal-body">
                         <div class="mb-3">
                             <label class="form-label small fw-medium text-secondary">Nom du médicament</label>
-                            <input type="text" name="nom" class="form-control" required placeholder="ex: Paracétamol 500mg">
+                            <input type="text" th:field="*{nom}" class="form-control" required placeholder="ex: Paracétamol 500mg">
                         </div>
                         <div class="mb-3">
                             <label class="form-label small fw-medium text-secondary">Catégorie</label>
-                            <select name="categorie.id" class="form-select" required>
+                            <select th:field="*{categorie}" class="form-select" required>
                                 <option value="" disabled selected>-- Choisir la catégorie --</option>
                                 <option th:each="cat : ${categories}" th:value="${cat.id}" th:text="${cat.nom}"></option>
                             </select>
@@ -185,21 +158,21 @@
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label class="form-label small fw-medium text-secondary">Prix Unitaire (FCFA)</label>
-                                <input type="number" name="prixUnitaire" class="form-control" min="0" required placeholder="ex: 1500">
+                                <input type="number" th:field="*{prixUnitaire}" class="form-control" min="0" required placeholder="ex: 1500">
                             </div>
                             <div class="col-md-6 mb-3">
-                                <label class="form-label small fw-medium text-secondary">Quantité Initiale</label>
-                                <input type="number" name="quantiteStock" class="form-control" min="0" required placeholder="ex: 100">
+                                <label class="form-label small fw-medium text-secondary">Quantité en Stock</label>
+                                <input type="number" th:field="*{quantiteStock}" class="form-control" min="0" required placeholder="ex: 100">
                             </div>
                         </div>
                         <div class="mb-2">
                             <label class="form-label small fw-medium text-secondary">Date de péremption</label>
-                            <input type="date" name="datePeremption" class="form-control" required>
+                            <input type="date" th:field="*{datePeremption}" class="form-control" required>
                         </div>
                     </div>
                     <div class="modal-footer border-0 pt-0">
                         <button type="button" class="btn btn-light" data-bs-dismiss="modal">Annuler</button>
-                        <button type="submit" class="btn btn-success px-4">Enregistrer</button>
+                        <button type="submit" class="btn btn-success px-4" th:text="${nouveauMedicament.id != null} ? 'Mettre à jour' : 'Enregistrer'">Enregistrer</button>
                     </div>
                 </form>
             </div>
@@ -208,5 +181,19 @@
 
     <!-- Bootstrap JS Bundle -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Script magique corrigé pour VS Code -->
+    <script th:inline="javascript">
+        window.addEventListener('DOMContentLoaded', event => {
+            /* Syntaxe propre lue correctement par VS Code et interprétée par Thymeleaf */
+            var medId = /*[[${nouveauMedicament.id}]]*/ null;
+            
+            /* Si l'ID n'est pas nul, cela veut dire qu'on a cliqué sur modifier */
+            if (medId !== null) {
+                var myModal = new bootstrap.Modal(document.getElementById('addMedicamentModal'));
+                myModal.show();
+            }
+        });
+    </script>
 </body>
 </html>

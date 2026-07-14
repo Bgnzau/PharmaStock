@@ -19,55 +19,16 @@
         .main-content { margin-left: 260px; padding: 40px; }
         .table-card { border: none; border-radius: 12px; background-color: #fff; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
 
-        /* 📱 DESIGN RESPONSIVE POUR SMARTPHONES (Écrans < 768px) */
         @media screen and (max-width: 768px) {
-            body {
-                padding-top: 60px;
-            }
-            /* La sidebar devient un bandeau horizontal en haut */
-            .sidebar {
-                position: relative !important;
-                width: 100% !important;
-                height: auto !important;
-                padding: 12px 0 !important;
-            }
-            .sidebar-brand {
-                margin-bottom: 12px !important;
-                text-align: center;
-            }
-            .sidebar nav {
-                flex-direction: row !important;
-                flex-wrap: wrap;
-                justify-content: center;
-                gap: 5px !important;
-                padding: 0 10px;
-            }
-            .nav-link-custom {
-                padding: 8px 12px !important;
-                font-size: 0.85rem;
-                border-left: none !important;
-                border-bottom: 2px solid transparent;
-            }
-            .nav-link-custom:hover, .nav-link-custom.active {
-                border-left: none !important;
-                border-bottom: 2px solid #10b981;
-            }
-            
-            /* L'espace de travail prend toute la largeur */
-            .main-content {
-                margin-left: 0 !important;
-                padding: 20px !important;
-            }
-            
-            /* Ajustement automatique des boutons et des headers alignés avec d-flex */
-            .main-content > .d-flex {
-                flex-direction: column;
-                align-items: stretch !important;
-                gap: 15px;
-            }
-            .main-content button, .main-content .btn {
-                width: 100%;
-            }
+            body { padding-top: 60px; }
+            .sidebar { position: relative !important; width: 100% !important; height: auto !important; padding: 12px 0 !important; }
+            .sidebar-brand { margin-bottom: 12px !important; text-align: center; }
+            .sidebar nav { flex-direction: row !important; flex-wrap: wrap; justify-content: center; gap: 5px !important; padding: 0 10px; }
+            .nav-link-custom { padding: 8px 12px !important; font-size: 0.85rem; border-left: none !important; border-bottom: 2px solid transparent; }
+            .nav-link-custom:hover, .nav-link-custom.active { border-left: none !important; border-bottom: 2px solid #10b981; }
+            .main-content { margin-left: 0 !important; padding: 20px !important; }
+            .main-content > .d-flex { flex-direction: column; align-items: stretch !important; gap: 15px; }
+            .main-content button, .main-content .btn { width: 100%; }
         }
     </style>
 </head>
@@ -97,14 +58,20 @@
     <!-- 2. ESPACE DE TRAVAIL À DROITE -->
     <div class="main-content">
         
+        <!-- Alerte si tentative d'accès interdit pour le vendeur -->
+        <div th:if="${param.interdit}" class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
+            <i class="fa-solid fa-triangle-exclamation me-2"></i> <strong>Accès Refusé !</strong> Votre compte vendeur n'a pas les droits pour modifier ou supprimer des catégories.
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+
         <!-- Header -->
         <div class="d-flex justify-content-between align-items-center mb-4">
             <div>
                 <h2 class="fw-bold text-dark m-0">Gestion des Catégories</h2>
                 <p class="text-muted small m-0">Organisez vos médicaments par familles thérapeutiques</p>
             </div>
-            <!-- Bouton d'ajout de catégorie -->
-            <button class="btn btn-success fw-semibold shadow-sm px-4" data-bs-toggle="modal" data-bs-target="#addCategorieModal">
+            <!-- Bouton d'ajout : Masqué pour le vendeur, visible pour l'ADMIN -->
+            <button sec:authorize="hasRole('ROLE_ADMIN')" class="btn btn-success fw-semibold shadow-sm px-4" data-bs-toggle="modal" data-bs-target="#addCategorieModal">
                 <i class="fa-solid fa-plus me-2"></i>Nouvelle Catégorie
             </button>
         </div>
@@ -117,7 +84,7 @@
                         <tr class="text-muted small">
                             <th>ID</th>
                             <th>Nom de la catégorie</th>
-                            <th class="text-end" sec:authorize="hasRole('ADMIN')">Actions</th>
+                            <th class="text-end" sec:authorize="hasRole('ROLE_ADMIN')">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -126,8 +93,8 @@
                             <td>
                                 <div class="fw-bold text-dark" th:text="${cat.nom}">Nom</div>
                             </td>
-                            <!-- Actions réservées uniquement à l'ADMIN -->
-                            <td class="text-end" sec:authorize="hasRole('ADMIN')">
+                            <!-- Actions masquées pour de bon sur l'interface du Vendeur -->
+                            <td class="text-end" sec:authorize="hasRole('ROLE_ADMIN')">
                                 <a th:href="@{/categories/modifier/{id}(id=${cat.id})}" class="btn btn-sm btn-outline-primary border-0 me-1" title="Modifier">
                                     <i class="fa-solid fa-pen-to-square"></i>
                                 </a>
@@ -138,33 +105,38 @@
                             </td>
                         </tr>
                         <tr th:if="${#lists.isEmpty(categories)}">
-                            <td colspan="3" class="text-center text-muted py-4">Aucune catégorie enregistrée. Cliquez sur "Nouvelle Catégorie" pour commencer.</td>
+                            <td colspan="3" class="text-center text-muted py-4">Aucune catégorie enregistrée.</td>
                         </tr>
                     </tbody>
                 </table>
             </div>
         </div>
-
     </div>
 
-    <!-- MODAL POUR AJOUT DIRECT -->
+    <!-- MODAL DYNAMIQUE POUR ENREGISTRER / MODIFIER -->
     <div class="modal fade" id="addCategorieModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content border-0 shadow-lg" style="border-radius: 12px;">
                 <div class="modal-header border-0 pb-0">
-                    <h5 class="fw-bold text-dark">Ajouter une catégorie</h5>
+                    <h5 class="fw-bold text-dark" th:text="${nouvelleCategorie.id != null} ? 'Modifier la catégorie' : 'Ajouter une catégorie'">Ajouter une catégorie</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <form th:action="@{/categories/ajouter}" method="POST">
+                <form th:action="@{/categories/ajouter}" th:object="${nouvelleCategorie}" method="POST">
+                    
+                    <!-- L'ID caché indispensable pour la modification -->
+                    <input type="hidden" th:field="*{id}" />
+
                     <div class="modal-body">
                         <div class="mb-2">
                             <label class="form-label small fw-medium text-secondary">Nom de la famille / catégorie</label>
-                            <input type="text" name="nom" class="form-control" required placeholder="ex: Antibiotiques, Analgésiques...">
+                            <!-- Liaison Thymeleaf correcte avec le modèle -->
+                            <input type="text" th:field="*{nom}" class="form-control" required placeholder="ex: Antibiotiques, Analgésiques...">
                         </div>
                     </div>
                     <div class="modal-footer border-0 pt-0">
-                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Annuler</button>
-                        <button type="submit" class="btn btn-success px-4">Enregistrer</button>
+                        <a th:if="${nouvelleCategorie.id != null}" th:href="@{/categories}" class="btn btn-light">Annuler</a>
+                        <button type="button" th:if="${nouvelleCategorie.id == null}" class="btn btn-light" data-bs-dismiss="modal">Annuler</button>
+                        <button type="submit" class="btn btn-success px-4" th:text="${nouvelleCategorie.id != null} ? 'Mettre à jour' : 'Enregistrer'">Enregistrer</button>
                     </div>
                 </form>
             </div>
@@ -173,5 +145,17 @@
 
     <!-- Bootstrap JS Bundle -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Script JavaScript pour ouvrir automatiquement la modale en mode modification -->
+    <script th:inline="javascript">
+        window.addEventListener('DOMContentLoaded', () => {
+            const cId = /*[[${nouvelleCategorie.id}]]*/ null;
+            
+            if (cId !== null) {
+                const myModal = new bootstrap.Modal(document.getElementById('addCategorieModal'));
+                myModal.show();
+            }
+        });
+    </script>
 </body>
 </html>
