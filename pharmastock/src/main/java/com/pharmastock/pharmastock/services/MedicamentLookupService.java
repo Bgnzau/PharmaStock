@@ -16,16 +16,19 @@ public class MedicamentLookupService {
 
     /**
      * Cette méthode appelle l'API externe avec un code-barres
-     * et renvoie les informations du produit sous forme de Map (Clé/Valeur).
+     * et renvoie les informations du produit sous forme de Map (Clé/Value).
      */
+    @SuppressWarnings("unchecked")
     public Map<String, Object> chercherProduitParCodeBarre(String codeBarre) {
         try {
             // 2. On construit l'URL de l'API externe avec le code-barres reçu
             String url = "https://world.openbeautyfacts.org/api/v0/product/" + codeBarre + ".json";
 
-            // 3. On envoie la requête GET et on récupère la réponse sous forme de Map Java
+            // 3. On envoie la requête GET avec un User-Agent (requis par Open Beauty Facts)
             Map<String, Object> reponse = restClient.get()
                     .uri(url)
+                    .header("User-Agent", "PharmaStock - Java Application - Version L3") // Identifie proprement
+                                                                                         // l'application
                     .retrieve()
                     .body(Map.class);
 
@@ -42,8 +45,13 @@ public class MedicamentLookupService {
             }
 
         } catch (Exception e) {
-            // En cas de problème réseau, on renvoie une map d'erreur propre sans faire
-            // planter l'application
+            // AJOUT DE SÉCURITÉ POUR LE DEBUGGING : Affiche l'erreur complète dans les logs
+            // Render !
+            System.out.println("=== ERREUR PHARMASTOCK API LOOKUP ===");
+            e.printStackTrace();
+            System.out.println("=====================================");
+
+            // En cas de problème réseau, on renvoie une map d'erreur propre
             return Map.of("statut", "erreur", "message", "Impossible de joindre l'API externe");
         }
 
