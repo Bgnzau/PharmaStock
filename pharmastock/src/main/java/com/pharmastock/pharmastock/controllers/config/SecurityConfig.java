@@ -19,35 +19,29 @@ public class SecurityConfig {
         public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
                 http
                                 .authorizeHttpRequests(auth -> auth
-                                                // 1. Autorisations publiques
+                                                // 1. Autorisations publiques (ON A RAJOUTÉ LA RECHERCHE PAR
+                                                // CODE-BARRES)
                                                 .requestMatchers("/login", "/verifier-2fa", "/css/**", "/js/**",
-                                                                "/api/stocks-donnees")
+                                                                "/api/stocks-donnees", "/api/medicaments/lookup/**")
                                                 .permitAll()
 
                                                 // 2. BLINDAGE TOTAL POUR L'ADMIN (Médicaments)
-                                                // Bloque la modification (GET et POST)
                                                 .requestMatchers("/medicaments/modifier", "/medicaments/modifier/**")
                                                 .hasRole("ADMIN")
-                                                // Bloque l'ajout/création (POST)
                                                 .requestMatchers("/medicaments/ajouter", "/medicaments/ajouter/**")
                                                 .hasRole("ADMIN")
-                                                // Bloque la suppression
                                                 .requestMatchers("/medicaments/supprimer", "/medicaments/supprimer/**")
                                                 .hasRole("ADMIN")
 
                                                 // 3. BLINDAGE TOTAL POUR L'ADMIN (Catégories)
-                                                // Bloque la modification (GET et POST)
                                                 .requestMatchers("/categories/modifier", "/categories/modifier/**")
                                                 .hasRole("ADMIN")
-                                                // Bloque l'ajout/création (POST)
                                                 .requestMatchers("/categories/ajouter", "/categories/ajouter/**")
                                                 .hasRole("ADMIN")
-                                                // Bloque la suppression
                                                 .requestMatchers("/categories/supprimer", "/categories/supprimer/**")
                                                 .hasRole("ADMIN")
 
-                                                // 4. Tout le reste est accessible aux utilisateurs connectés (Vendeur
-                                                // et Admin)
+                                                // 4. Tout le reste est accessible aux utilisateurs connectés
                                                 .anyRequest().authenticated())
                                 .formLogin(form -> form
                                                 .loginPage("/login")
@@ -61,13 +55,9 @@ public class SecurityConfig {
                                 .exceptionHandling(exception -> exception
                                                 .accessDeniedHandler((request, response, accessDeniedException) -> {
                                                         String uri = request.getRequestURI();
-                                                        // Si l'action concerne les catégories, on le laisse sur la page
-                                                        // catégories avec l'alerte
                                                         if (uri.contains("categories")) {
                                                                 response.sendRedirect("/categories?interdit=true");
                                                         } else {
-                                                                // Sinon, direction la page des médicaments avec
-                                                                // l'alerte
                                                                 response.sendRedirect("/medicaments?interdit=true");
                                                         }
                                                 }));

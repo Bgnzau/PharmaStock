@@ -17,6 +17,7 @@ public class MedicamentLookupService {
     @SuppressWarnings("unchecked")
     public Map<String, Object> chercherProduitParCodeBarre(String codeBarre) {
         try {
+            // URL ciblée sur Open Beauty Facts
             String url = "https://world.openbeautyfacts.org/api/v0/product/" + codeBarre + ".json";
 
             Map<String, Object> reponse = restClient.get()
@@ -41,15 +42,14 @@ public class MedicamentLookupService {
             }
 
         } catch (HttpClientErrorException.NotFound e) {
-            // Si l'API répond 404 (ex: produit alimentaire ou inexistant)
+            // Capturé proprement lors d'un code 404 (ex: produit typé nourriture ou
+            // inexistant)
             System.out.println("=== PRODUIT INCONNU OU INVALIDE CORRESPONDANT AU CODE : " + codeBarre + " ===");
-
-            // Si l'API donne un message spécifique (comme pour la nourriture), on l'affiche
-            // dans Render
             System.out.println(e.getResponseBodyAsString());
 
-            return Map.of("statut", "introuvable", "message",
-                    "Produit non référencé ou mauvais type (ex: alimentaire)");
+            return Map.of(
+                    "statut", "introuvable",
+                    "message", "Produit non référencé ou mauvais type (ex: alimentaire dans Open Food Facts)");
 
         } catch (Exception e) {
             // Pour toute autre erreur technique (réseau, coupure API...)
