@@ -1,0 +1,35 @@
+version: "3.8"
+
+services:
+  # --- Service 1 : La Base de Données MySQL ---
+  db:
+    image: mysql:8.0
+    container_name: pharmastock-db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: pharmastock_db
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+  # --- Service 2 : L'Application Spring Boot ---
+  app:
+    build: .
+    container_name: pharmastock-app
+    restart: always
+    ports:
+      - "8085:8085"
+    depends_on:
+      - db
+    environment:
+      # On injecte les variables attendues par ton application.properties
+      # Note le "db" à la place de "localhost" car l'application parle au conteneur MySQL
+      SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/pharmastock_db?createDatabaseIfNotExist=true&serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: root
+      PORT: 8085
+
+volumes:
+  mysql_data:

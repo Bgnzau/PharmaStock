@@ -3,11 +3,14 @@ package com.pharmastock.pharmastock.services;
 import com.pharmastock.pharmastock.models.Medicament;
 import com.pharmastock.pharmastock.repositories.MedicamentRepository;
 import org.springframework.stereotype.Service;
+
+import java.time.LocalDate;
 import java.util.List;
 
 @Service
 public class MedicamentService {
 
+    private LocalDate datePeremption;
     private final MedicamentRepository medicamentRepository;
     private final ApiExterneService apiExterneService;
 
@@ -17,22 +20,27 @@ public class MedicamentService {
         this.apiExterneService = apiExterneService;
     }
 
-    // 1. Récupérer tous les médicaments (Ce qui manquait au contrôleur !)
+    // 1. Récupérer tous les médicaments
     public List<Medicament> getAllMedicaments() {
         return medicamentRepository.findAll();
     }
 
-    // 2. Trouver un médicament par son ID (Ce qui manquait aussi !)
+    // 2. Trouver un médicament par son ID
     public Medicament getMedicamentById(Long id) {
         return medicamentRepository.findById(id).orElse(null);
     }
 
-    // 3. Supprimer un médicament (Ce qui manquait aussi !)
+    // 3. Supprimer un médicament
     public void deleteMedicament(Long id) {
         medicamentRepository.deleteById(id);
     }
 
-    // 4. Ta méthode de sauvegarde boostée à l'API externe !
+    // 4. Recherche filtrée par nom (Ignore la casse)
+    public List<Medicament> searchMedicamentsParNom(String keyword) {
+        return medicamentRepository.findByNomContainingIgnoreCase(keyword);
+    }
+
+    // 5. Ta méthode de sauvegarde boostée à l'API externe !
     public Medicament saveMedicament(Medicament medicament) {
         // On consomme l'API externe juste avant la sauvegarde
         String noticeAuto = apiExterneService.recupererDescriptionAutomatique(medicament.getNom());
