@@ -18,7 +18,7 @@ public class MedicamentLookupService {
     public Map<String, Object> chercherProduitParCodeBarre(String codeBarre) {
         try {
             // URL ciblée sur Open Beauty Facts
-            String url = "https://world.openbeautyfacts.org/api/v0/product/" + codeBarre + ".json";
+            String url = "https://world.openbeautyfacts.org/api/v0/product/3282779003131.json";
 
             Map<String, Object> reponse = restClient.get()
                     .uri(url)
