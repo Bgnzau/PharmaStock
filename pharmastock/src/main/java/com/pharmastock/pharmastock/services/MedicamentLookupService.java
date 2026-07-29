@@ -17,6 +17,7 @@ public class MedicamentLookupService {
     @SuppressWarnings("unchecked")
     public Map<String, Object> chercherProduitParCodeBarre(String codeBarre) {
         try {
+            // URL ciblée sur Open Beauty Facts
             String url = "https://world.openbeautyfacts.org/api/v0/product/" + codeBarre + ".json";
 
             Map<String, Object> reponse = restClient.get()
@@ -30,7 +31,7 @@ public class MedicamentLookupService {
             System.out.println(reponse);
 
             if (reponse != null) {
-                // Gestion souple du status (qu'il soit Integer ou String)
+                // Gestion souple et unique du status (qu'il soit Integer ou String)
                 Object statusObj = reponse.get("status");
                 String status = statusObj != null ? String.valueOf(statusObj) : "";
 
