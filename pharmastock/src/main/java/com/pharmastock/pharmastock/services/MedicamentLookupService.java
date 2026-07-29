@@ -17,7 +17,6 @@ public class MedicamentLookupService {
     @SuppressWarnings("unchecked")
     public Map<String, Object> chercherProduitParCodeBarre(String codeBarre) {
         try {
-            // URL ciblée sur Open Beauty Facts
             String url = "https://world.openbeautyfacts.org/api/v0/product/" + codeBarre + ".json";
 
             Map<String, Object> reponse = restClient.get()
@@ -26,24 +25,29 @@ public class MedicamentLookupService {
                     .retrieve()
                     .body(Map.class);
 
-            if (reponse != null) {
-                // Conversion sécurisée du status en String ("1" pour trouvé)
-                String status = String.valueOf(reponse.get("status"));
+            // Log d'inspection crucial pour le debug sur Render
+            System.out.println("=== DEBUG PHARMASTOCK - REPONSE REÇUE ===");
+            System.out.println(reponse);
 
-                if ("1".equals(status)) {
+            if (reponse != null) {
+                // Gestion souple du status (qu'il soit Integer ou String)
+                Object statusObj = reponse.get("status");
+                String status = statusObj != null ? String.valueOf(statusObj) : "";
+
+                if ("1".equals(status) || "1.0".equals(status)) {
                     Map<String, Object> productData = (Map<String, Object>) reponse.get("product");
 
-                    return Map.of(
-                            "statut", "trouve",
-                            "nom", productData.getOrDefault("product_name", "Produit inconnu"),
-                            "marque", productData.getOrDefault("brands", "Marque inconnue"),
-                            "image", productData.getOrDefault("image_url", ""));
+                    if (productData != null) {
+                        return Map.of(
+                                "statut", "trouve",
+                                "nom", productData.getOrDefault("product_name", "Produit inconnu"),
+                                "marque", productData.getOrDefault("brands", "Marque inconnue"),
+                                "image", productData.getOrDefault("image_url", ""));
+                    }
                 }
             }
 
         } catch (HttpClientErrorException.NotFound e) {
-            // Capturé proprement lors d'un code 404 (ex: produit typé nourriture ou
-            // inexistant)
             System.out.println("=== PRODUIT INCONNU OU INVALIDE CORRESPONDANT AU CODE : " + codeBarre + " ===");
             System.out.println(e.getResponseBodyAsString());
 
@@ -52,7 +56,6 @@ public class MedicamentLookupService {
                     "message", "Produit non référencé ou mauvais type (ex: alimentaire dans Open Food Facts)");
 
         } catch (Exception e) {
-            // Pour toute autre erreur technique (réseau, coupure API...)
             System.out.println("=== ERREUR TECHNIQUE PHARMASTOCK API LOOKUP ===");
             e.printStackTrace();
             System.out.println("=====================================");
@@ -60,6 +63,6 @@ public class MedicamentLookupService {
             return Map.of("statut", "erreur", "message", "Impossible de joindre l'API externe");
         }
 
-        return Map.of("statut", "introuvable", "message", "Produit non référencé");
+        return Map.of("statut", "introuvable", "message", "Code-barres non validé par l'API (Statut incorrect)");
     }
 }
